@@ -1,7 +1,7 @@
 package backend.engine
 
-import backend.Managed
 import backend.inputs.Mouse
+import backend.memory.Managed
 import backend.window.Window
 import backend.window.WindowConfigs
 

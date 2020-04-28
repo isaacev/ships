@@ -38,7 +38,7 @@ class Window(configs: WindowConfigs) {
     private var devicePixelRatio = 1
     private var wasResized = false
     private var vSync = configs.vSync
-    private val projectionMatrix = Matrix4f()
+    val projectionMatrix = Matrix4f()
 
     init {
         // Create an error callback that's just STDERR
