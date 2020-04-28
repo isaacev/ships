@@ -1,0 +1,7 @@
+# folders
+/out
+
+# files
+/.idea/tasks.xml
+/.idea/uiDesigner.xml
+.DS_Store
