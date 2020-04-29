@@ -26,7 +26,7 @@ interface WindowConfigs {
 
 class Window(configs: WindowConfigs) {
     private val constants = object {
-        val ZOOM: Float = 64f
+        val ZOOM: Float = 48f
         val Z_NEAR: Float = -1f
         val Z_FAR: Float = 1_000f
     }
