@@ -11,7 +11,7 @@ import backend.memory.Texture
 import backend.memory.TextureCatalog
 import org.joml.Vector3f
 
-const val TILE_SIZE = .5f
+const val TILE_SIZE = 1f
 
 class Tile(val coord: HexCubeCoord, model: SimpleModel) : SimpleEntity(model) {
     override fun setShaderUniforms(shader: Shader) {

@@ -93,7 +93,7 @@ data class HexCubeCoord(val x: Int, val y: Int, val z: Int) {
         return (dx + dy + dz) / 2
     }
 
-    fun toCartesian(size: Float): Vector2f {
+    fun toCartesian(size: Float = TILE_SIZE): Vector2f {
         val cartX = flatHexHorizontalCenterDist(size) * x.toFloat()
         val cartY = flatHexVerticalCenterDist(size) * ((y - z) / 2f)
         return Vector2f(cartX, cartY)
