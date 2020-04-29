@@ -29,7 +29,7 @@ class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
     }
 
     private var direction = viewingAngle
-    private var angle = viewingAngle.toDegrees()
+    private var angle = viewingAngle.toDegrees() - 90f // why add 90f? who tf knows
     private val focus = Vector3f()
 
     // Animation variables
@@ -131,7 +131,7 @@ class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
         direction = newDirection
         isMoving = true
         startAngle = angle
-        finishAngle = newDirection.toDegrees() // why add 90f? who tf knows
+        finishAngle = newDirection.toDegrees() - 90f // why add 90f? who tf knows
 
         // Make sure the rotation uses the shortest arc. For example, when moving
         // from 315deg -> 45deg use the 90deg arc instead of the 270deg arc. In the
