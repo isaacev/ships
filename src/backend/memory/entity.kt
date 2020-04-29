@@ -12,6 +12,35 @@ object ConversionConstants {
     const val Z_OFFSET: Units = 0f
 }
 
+abstract class Entity {
+    val pos: Vector3f = Vector3f(0f, 0f, 0f)
+    val rot: Vector3f = Vector3f(0f, 0f, 0f)
+    abstract val shader: Shader
+    abstract val texture: Texture
+
+    abstract fun meshes(cb: (pos: Vector3f, rot: Vector3f, scale: Float, mesh: Mesh) -> Unit)
+
+    fun updateEntity(x: Units = pos.x, y: Units = pos.z, yaw: Degrees = rot.y) {
+        pos.x = (x * ConversionConstants.X_SCALAR) + ConversionConstants.X_OFFSET
+        pos.z = (y * ConversionConstants.Z_SCALAR) + ConversionConstants.Z_OFFSET
+        rot.y = yaw
+    }
+
+    abstract fun setShaderUniforms(shader: Shader)
+}
+
+abstract class SimpleEntity(private val model: SimpleModel) : Entity() {
+    override val shader: Shader
+        get() = model.shader
+
+    override val texture: Texture
+        get() = model.texture
+
+    override fun meshes(cb: (pos: Vector3f, rot: Vector3f, scale: Float, mesh: Mesh) -> Unit) {
+        cb(pos, rot, 1f, model.mesh)
+    }
+}
+
 /**
  * Entities are an abstraction that represents a unique renderable thing
  * in the game world. Entities have a reference to a Model. The combination
@@ -22,23 +51,22 @@ object ConversionConstants {
  * Entities ARE NOT responsible for the destruction of their Model. Model
  * destruction will ALWAYS be handled by higher-level systems.
  */
-abstract class Entity<Key>(val model: Model<Key>) {
-    val pos: Vector3f = Vector3f(0f, 0f, 0f)
-    val rot: Vector3f = Vector3f(0f, 0f, 0f)
+abstract class ComplexEntity<Key>(private val model: ComplexModel<Key>) : Entity() {
+    override val shader: Shader
+        get() = model.shader
 
-    fun updateEntity(x: Units = pos.x, y: Units = pos.z, yaw: Degrees = rot.y) {
-        pos.x = (x * ConversionConstants.X_SCALAR) + ConversionConstants.X_OFFSET
-        pos.z = (y * ConversionConstants.Z_SCALAR) + ConversionConstants.Z_OFFSET
-        rot.y = yaw
-    }
-
-    open fun setShaderUniforms(shader: Shader) {
-        shader.setUniform("textureSampler", 0)
-    }
+    override val texture: Texture
+        get() = model.texture
 
     abstract fun getMeshPositionOffset(key: Key): Vector3f
 
     abstract fun getMeshRotationOffset(key: Key): Vector3f
 
     abstract fun getMeshScale(key: Key): Float
+
+    override fun meshes(cb: (pos: Vector3f, rot: Vector3f, scale: Float, mesh: Mesh) -> Unit) {
+        model.meshes.forEach { (key, mesh) ->
+            cb(getMeshPositionOffset(key), getMeshRotationOffset(key), getMeshScale(key), mesh)
+        }
+    }
 }

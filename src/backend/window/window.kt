@@ -148,7 +148,7 @@ class Window(configs: WindowConfigs) {
     }
 
     fun doesNotHaveVerticalSync(): Boolean {
-        return !vSync
+        return !hasVSync()
     }
 
     fun getScreenWidth(): Int {

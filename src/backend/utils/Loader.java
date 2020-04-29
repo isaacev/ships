@@ -74,10 +74,10 @@ public class Loader {
                     break;
             }
         }
-        return reorderLists(fileName, vertices, textures, normals, faces);
+        return reorderLists(vertices, textures, normals, faces);
     }
 
-    private static Mesh reorderLists(String fileName, List<Vector3f> posList, List<Vector2f> textCoordList, List<Vector3f> normList, List<Face> facesList) {
+    private static Mesh reorderLists(List<Vector3f> posList, List<Vector2f> textCoordList, List<Vector3f> normList, List<Face> facesList) {
         List<Integer> indices = new ArrayList<>();
         // Create position array in the order it has been declared
         float[] posArr = new float[posList.size() * 3];
@@ -100,7 +100,7 @@ public class Loader {
         }
         int[] indicesArr;
         indicesArr = indices.stream().mapToInt((Integer v) -> v).toArray();
-        return new Mesh(fileName, posArr, textCoordArr, normArr, indicesArr);
+        return new Mesh(posArr, textCoordArr, normArr, indicesArr);
     }
 
     private static void processFaceVertex(IdxGroup indices,

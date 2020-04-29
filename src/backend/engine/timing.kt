@@ -33,6 +33,10 @@ data class Duration(val total: Milliseconds, private var remaining: Milliseconds
         }
     }
 
+    fun requestAll(): Milliseconds {
+        return request(remaining)
+    }
+
     fun fresh(): Duration {
         return Duration(total)
     }

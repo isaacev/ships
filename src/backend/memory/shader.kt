@@ -126,25 +126,29 @@ class Shader(private val directory: String, uniforms: List<UniformName>) : Manag
     }
 }
 
-class ShaderCatalog(config: Map<String, List<UniformName>>) : Managed {
-    private var shaders: Map<String, Shader?> = HashMap()
+class ShaderCatalog() : Managed {
+    private var shaders: MutableMap<String, Shader> = HashMap()
 
     val size: Int
         get() = shaders.size
 
-    init {
-        shaders = config.mapValues { (directory, uniforms) ->
-            Shader(directory, uniforms)
-        }
-    }
-
     override fun free() {
         for ((_, shader) in shaders) {
-            shader?.free()
+            shader.free()
         }
     }
 
     fun get(name: String): Shader? {
         return shaders[name]
+    }
+
+    fun load(directory: String, uniforms: List<UniformName>): Shader {
+        val shader = Shader(directory, uniforms)
+        shaders[directory] = shader
+        return shader
+    }
+
+    fun getOrLoad(directory: String, uniforms: List<UniformName>): Shader {
+        return get(directory) ?: load(directory, uniforms)
     }
 }

@@ -17,13 +17,11 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
 public class Mesh implements Managed {
-    private final String fileName;
     private final int vaoId;
     private final List<Integer> vboIdList;
     private final int vertexCount;
 
-    public Mesh(String fileName, float[] positions, float[] textCoords, float[] normals, int[] indices) {
-        this.fileName = fileName;
+    public Mesh(float[] positions, float[] textCoords, float[] normals, int[] indices) {
         FloatBuffer posBuffer = null;
         FloatBuffer textCoordsBuffer = null;
         FloatBuffer vecNormalsBuffer = null;
@@ -118,8 +116,6 @@ public class Mesh implements Managed {
 
     @Override
     public void free() {
-        System.out.printf("free mesh (from %s)\n", this.fileName);
-
         glDisableVertexAttribArray(0);
 
         // Delete the VBOs
@@ -150,9 +146,8 @@ public class Mesh implements Managed {
             polygons.add(new Vector3i(v0, v1, v2));
         }
 
-        public Mesh toMesh(String fileName) {
+        public Mesh toMesh() {
             return new Mesh(
-                fileName,
                 vec3f_to_arr(vertices),
                 vec2f_to_arr(textures),
                 vec3f_to_arr(normals),
