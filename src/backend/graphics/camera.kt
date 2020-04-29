@@ -115,6 +115,10 @@ class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
         moveTo(newDirection)
     }
 
+    fun reset(newDirection: HexDirection) {
+        moveTo(newDirection)
+    }
+
     private fun moveTo(newDirection: HexDirection) {
         if (isMoving) {
             // Ignore because the camera is currently in motion

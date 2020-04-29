@@ -1,15 +1,20 @@
 package frontend
 
 import backend.inputs.KeyCode
+import frontend.game.hexagons.HexDirection
 import org.joml.Vector2f
 import org.joml.Vector3f
-import org.lwjgl.glfw.GLFW.GLFW_KEY_E
-import org.lwjgl.glfw.GLFW.GLFW_KEY_Q
+import org.lwjgl.glfw.GLFW.*
 
 object Configs {
+    object Camera {
+        val DEFAULT_ANGLE: HexDirection = HexDirection.BottomRight
+    }
+
     object Controls {
         const val CAMERA_PAN_LEFT: KeyCode = GLFW_KEY_Q
         const val CAMERA_PAN_RIGHT: KeyCode = GLFW_KEY_E
+        const val CAMERA_RESET: KeyCode = GLFW_KEY_R
     }
 
     object Lighting {

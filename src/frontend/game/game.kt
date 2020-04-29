@@ -26,15 +26,20 @@ class Game : GameLike {
     override fun input(window: Window, mouse: Mouse) {
         camPanLeft.update(window)
         camPanRight.update(window)
+        camReset.update(window)
     }
 
     override fun updateState(mouse: Mouse) {
-        if (camPanLeft.use()) {
-            camera.panLeft()
-        }
+        if (camReset.use()) {
+            camera.reset(Configs.Camera.DEFAULT_ANGLE)
+        } else {
+            if (camPanLeft.use()) {
+                camera.panLeft()
+            }
 
-        if (camPanRight.use()) {
-            camera.panRight()
+            if (camPanRight.use()) {
+                camera.panRight()
+            }
         }
     }
 
