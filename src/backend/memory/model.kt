@@ -17,6 +17,17 @@ class ModelCatalog : Managed {
         return model
     }
 
+    fun <M : Model> getOrLoad(name: String, loader: () -> M): M {
+        val knownModel = models[name]
+        return if (knownModel != null) {
+            knownModel as M
+        } else {
+            val newModel = loader()
+            models[name] = newModel
+            newModel
+        }
+    }
+
     fun get(name: String): Model? {
         return models[name]
     }

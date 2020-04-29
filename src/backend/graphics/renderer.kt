@@ -38,7 +38,7 @@ class Renderer {
     }
 
     // TODO: remove TileGrid from method signature
-    fun render(window: Window, camera: Camera, tiles: TileGrid?) {
+    fun render(window: Window, camera: Camera, tiles: TileGrid?, entities: List<Entity>) {
         // Clear the framebuffer and other preparations for a fresh render
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
         glViewport(0, 0, window.getPixelWidth(), window.getPixelHeight())
@@ -46,6 +46,7 @@ class Renderer {
 
         val viewMatrix = camera.viewMatrix
         tiles?.forEach { renderEntity(window, viewMatrix, it) }
+        entities.forEach { renderEntity(window, viewMatrix, it) }
     }
 }
 
