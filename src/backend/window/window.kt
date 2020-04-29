@@ -127,6 +127,9 @@ class Window(configs: WindowConfigs) {
         GL11.glCullFace(GL11.GL_BACK)
 
         // Antialiasing
+        GL11.glEnable(GL11.GL_POLYGON_SMOOTH)
+        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST)
+        GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST)
         GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 4)
         GL32.glProvokingVertex(GL32.GL_FIRST_VERTEX_CONVENTION)
 
