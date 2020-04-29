@@ -2,6 +2,7 @@
   <dictionary name="isaac">
     <words>
       <w>coord</w>
+      <w>shaders</w>
     </words>
   </dictionary>
 </component>
