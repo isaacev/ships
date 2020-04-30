@@ -34,5 +34,5 @@ void main()
 
     float brightness     = max(dot(-lightDirection, meshVertexNormal), 0.0);
     vec3  lighting       = (lightColor * lightBias.x) + (brightness * lightColor * lightBias.y);
-          pixelColor     = finalColor * vec4(lighting, 1.0);
+    pixelColor     = finalColor * vec4(lighting, 1.0);
 }
