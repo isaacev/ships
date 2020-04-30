@@ -36,9 +36,6 @@ class TextureCatalog : Managed {
         return get("$underlay $overlay") ?: load(underlay, overlay)
     }
 
-    val size: Int
-        get() = textures.size
-
     override fun free() {
         for ((_, texture) in textures) {
             texture.free()
@@ -107,13 +104,11 @@ class SimpleTexture(private val filename: String) : Texture {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST)
 
         // Upload the texture data
-
-        // Upload the texture data
         GL11.glTexImage2D(
             GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf
         )
 
-        // Generate the Mip Map
+        // Generate the mipmap
         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D)
 
         return textureId
