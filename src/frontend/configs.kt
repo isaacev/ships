@@ -13,6 +13,8 @@ object Configs {
     }
 
     object Controls {
+        const val CAMERA_PAN_UP: KeyCode = GLFW_KEY_W
+        const val CAMERA_PAN_DOWN: KeyCode = GLFW_KEY_S
         const val CAMERA_PAN_LEFT: KeyCode = GLFW_KEY_Q
         const val CAMERA_PAN_RIGHT: KeyCode = GLFW_KEY_E
         const val CAMERA_RESET: KeyCode = GLFW_KEY_R

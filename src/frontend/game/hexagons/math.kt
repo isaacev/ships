@@ -1,6 +1,7 @@
 package frontend.game.hexagons
 
 import backend.Degrees
+import backend.ToDegrees
 import org.joml.Vector2f
 import kotlin.math.PI
 import kotlin.math.abs
@@ -61,10 +62,10 @@ fun flatHexVerticalCenterDist(size: Float): Float {
  * @link https://www.redblobgames.com/grids/hexagons
  */
 
-enum class HexDirection {
+enum class HexDirection : ToDegrees {
     Top, TopRight, BottomRight, Bottom, BottomLeft, TopLeft;
 
-    fun toDegrees(): Degrees {
+    override fun toDegrees(): Degrees {
         return when (this) {
             Top         -> 0f
             TopRight    -> 60f

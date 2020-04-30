@@ -1,6 +1,7 @@
 package backend.graphics
 
 import backend.Degrees
+import backend.ToDegrees
 import backend.Units
 import backend.animation.Animated
 import backend.animation.Easing
@@ -28,48 +29,127 @@ interface Camera {
     val zFar: Units
 }
 
-class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
+enum class Pitch : ToDegrees {
+    Highest, Middle, Lowest;
+
+    override fun toDegrees(): Degrees {
+        return when (this) {
+            Highest -> 20f
+            Middle  -> 45f
+            Lowest  -> 70f
+        }
+    }
+}
+
+private class AnimatedDegree<T : ToDegrees>(initial: T) : Animated {
+    private var value: T = initial
+    private var angle: Degrees = initial.toDegrees()
+    private var isMoving: Boolean = false
+    private var startAngle: Degrees = initial.toDegrees()
+    private var finishAngle: Degrees = initial.toDegrees()
+    private var progress: Milliseconds = 0f
+
+    fun getValue(): T {
+        return value
+    }
+
+    fun moveTo(newValue: T) {
+        if (isMoving) {
+            // Ignore because the camera is currently in motion
+            return
+        } else if (value == newValue) {
+            // Ignore because the new heading is the same as the current heading
+            return
+        }
+
+        value = newValue
+        isMoving = true
+        startAngle = angle
+        finishAngle = newValue.toDegrees()
+
+        // Make sure the rotation uses the shortest arc. For example, when moving
+        // from 315deg -> 45deg use the 90deg arc instead of the 270deg arc. In the
+        // example, the shorter arc can be forced by using 405deg instead of 45deg.
+        if (abs(finishAngle - startAngle) > 180) {
+            if (finishAngle < startAngle) {
+                finishAngle += 360
+            } else {
+                startAngle += 360
+            }
+        }
+
+        progress = 0f
+    }
+
+    fun getFloat(): Float {
+        return angle
+    }
+
+    fun getDouble(): Double {
+        return angle.toDouble()
+    }
+
+    override fun nextFrame(delta: Duration) {
+        if (!isMoving) {
+            return
+        }
+
+        progress += delta.request(OrbitalCamera.DURATION - progress)
+        angle = Easing.InOutQuad.calc(progress, OrbitalCamera.DURATION, startAngle, finishAngle)
+
+        if (abs(finishAngle - angle) < OrbitalCamera.CUTOFF) {
+            angle = finishAngle % 360
+            isMoving = false
+        }
+    }
+}
+
+class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
     companion object Constants {
-        const val LATITUDE: Degrees = 45f
         const val RADIUS: Units = 20f
         const val CUTOFF: Degrees = 1f
         const val DURATION: Milliseconds = 200f
     }
 
-    private var direction = viewingAngle
-    private var angle = viewingAngle.toDegrees() - 90f // why add 90f? who tf knows
+    private val originalYaw = yaw
+    private val originalPitch = pitch
+    private val yaw = AnimatedDegree(yaw)
+    private val pitch = AnimatedDegree(pitch)
+
+    // private var direction = yaw
+    // private var angle = yaw.toDegrees() - 90f // why add 90f? who tf knows
     private val focus = Vector3f()
 
     override val fieldOfView: Degrees = 60f
     override val zNear: Units = 0.001f
     override val zFar: Units = 1_000f
 
-    // Animation variables
-    private var isMoving = false
-    private var startAngle = angle
-    private var finishAngle = angle
-    private var progress: Milliseconds = 0f
-
     override val position: Vector3f
         get() {
-            val x = RADIUS * sin(Math.toRadians(LATITUDE.toDouble())) * cos(Math.toRadians(angle.toDouble()))
-            val y = RADIUS * cos(Math.toRadians(LATITUDE.toDouble()))
-            val z = RADIUS * sin(Math.toRadians(LATITUDE.toDouble())) * sin(Math.toRadians(angle.toDouble()))
+            // Necessary because toRadians uses x-axis as 0deg, we want to use the y-axis as the 0deg instead
+            val offsetYaw = yaw.getDouble() - 90.0
+
+            val x = RADIUS * sin(Math.toRadians(pitch.getDouble())) * cos(Math.toRadians(offsetYaw))
+            val y = RADIUS * cos(Math.toRadians(pitch.getDouble()))
+            val z = RADIUS * sin(Math.toRadians(pitch.getDouble())) * sin(Math.toRadians(offsetYaw))
             return Vector3f(x.toFloat() + focus.x, y.toFloat() + focus.y, z.toFloat() + focus.z)
         }
 
     override val normal: Vector3f
         get() {
-            val x = RADIUS * sin(Math.toRadians(LATITUDE.toDouble())) * cos(Math.toRadians(angle.toDouble()))
-            val y = RADIUS * cos(Math.toRadians(LATITUDE.toDouble()))
-            val z = RADIUS * sin(Math.toRadians(LATITUDE.toDouble())) * sin(Math.toRadians(angle.toDouble()))
+            // Necessary because toRadians uses x-axis as 0deg, we want to use the y-axis as the 0deg instead
+            val offsetYaw = yaw.getDouble() - 90.0
+
+            val x = RADIUS * sin(Math.toRadians(pitch.getDouble())) * cos(Math.toRadians(offsetYaw))
+            val y = RADIUS * cos(Math.toRadians(pitch.getDouble()))
+            val z = RADIUS * sin(Math.toRadians(pitch.getDouble())) * sin(Math.toRadians(offsetYaw))
             return Vector3f(-x.toFloat(), -y.toFloat(), -z.toFloat())
         }
 
     override val rotation: Vector3f
         get() {
-            val lat = -LATITUDE + 90f
-            val lon = (angle + 270f) % 360
+            val lat = -pitch.getFloat() + 90f
+            val lon = (yaw.getFloat() + 180f) % 360f
             return Vector3f(lat, lon, 0f)
         }
 
@@ -93,21 +173,30 @@ class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
         }
 
     override fun nextFrame(delta: Duration) {
-        if (!isMoving) {
-            return
-        }
+        yaw.nextFrame(delta)
+        pitch.nextFrame(delta.fresh())
+    }
 
-        progress += delta.request(DURATION - progress)
-        angle = Easing.InOutQuad.calc(progress, DURATION, startAngle, finishAngle)
-
-        if (abs(finishAngle - angle) < CUTOFF) {
-            angle = finishAngle % 360
-            isMoving = false
+    fun panUp() {
+        val newPitch = when (pitch.getValue()) {
+            Pitch.Highest -> Pitch.Highest
+            Pitch.Middle  -> Pitch.Highest
+            Pitch.Lowest  -> Pitch.Middle
         }
+        moveTo(pitch = newPitch)
+    }
+
+    fun panDown() {
+        val newPitch = when (pitch.getValue()) {
+            Pitch.Highest -> Pitch.Middle
+            Pitch.Middle  -> Pitch.Lowest
+            Pitch.Lowest  -> Pitch.Lowest
+        }
+        moveTo(pitch = newPitch)
     }
 
     fun panLeft() {
-        val newDirection = when (direction) {
+        val newYaw = when (yaw.getValue()) {
             HexDirection.Top         -> HexDirection.TopRight
             HexDirection.TopRight    -> HexDirection.BottomRight
             HexDirection.BottomRight -> HexDirection.Bottom
@@ -115,11 +204,11 @@ class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
             HexDirection.BottomLeft  -> HexDirection.TopLeft
             HexDirection.TopLeft     -> HexDirection.Top
         }
-        moveTo(newDirection)
+        moveTo(yaw = newYaw)
     }
 
     fun panRight() {
-        val newDirection = when (direction) {
+        val newYaw = when (yaw.getValue()) {
             HexDirection.Top         -> HexDirection.TopLeft
             HexDirection.TopRight    -> HexDirection.Top
             HexDirection.BottomRight -> HexDirection.TopRight
@@ -127,39 +216,16 @@ class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
             HexDirection.BottomLeft  -> HexDirection.Bottom
             HexDirection.TopLeft     -> HexDirection.BottomLeft
         }
-        moveTo(newDirection)
+        moveTo(yaw = newYaw)
     }
 
-    fun reset(newDirection: HexDirection) {
-        moveTo(newDirection)
+    fun reset() {
+        moveTo(yaw = originalYaw, pitch = originalPitch)
     }
 
-    private fun moveTo(newDirection: HexDirection) {
-        if (isMoving) {
-            // Ignore because the camera is currently in motion
-            return
-        } else if (direction == newDirection) {
-            // Ignore because the new heading is the same as the current heading
-            return
-        }
-
-        direction = newDirection
-        isMoving = true
-        startAngle = angle
-        finishAngle = newDirection.toDegrees() - 90f // why add 90f? who tf knows
-
-        // Make sure the rotation uses the shortest arc. For example, when moving
-        // from 315deg -> 45deg use the 90deg arc instead of the 270deg arc. In the
-        // example, the shorter arc can be forced by using 405deg instead of 45deg.
-        if (abs(finishAngle - startAngle) > 180) {
-            if (finishAngle < startAngle) {
-                finishAngle += 360
-            } else {
-                startAngle += 360
-            }
-        }
-
-        progress = 0f
+    private fun moveTo(yaw: HexDirection = this.yaw.getValue(), pitch: Pitch = this.pitch.getValue()) {
+        this.yaw.moveTo(yaw)
+        this.pitch.moveTo(pitch)
     }
 
     fun mouseRayGroundPlaneIntersection(window: Window, mouse: Mouse, projectionMatrix: Matrix4f): Vector2f? {

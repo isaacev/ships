@@ -17,3 +17,7 @@ fun color(hex: Int): Color {
     val b = (hex and 0x0000ff)
     return color(r, g, b)
 }
+
+interface ToDegrees {
+    fun toDegrees(): Degrees
+}

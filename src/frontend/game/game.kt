@@ -4,6 +4,7 @@ import backend.color
 import backend.engine.Duration
 import backend.engine.GameLike
 import backend.graphics.OrbitalCamera
+import backend.graphics.Pitch
 import backend.graphics.Renderer
 import backend.inputs.DiscreteClick
 import backend.inputs.DiscreteKey
@@ -21,12 +22,14 @@ import frontend.game.hexagons.TileGrid
 import frontend.game.hexagons.pointToHex
 
 class Game : GameLike {
-    private var camera = OrbitalCamera(Configs.Camera.DEFAULT_ANGLE)
+    private var camera = OrbitalCamera(Configs.Camera.DEFAULT_ANGLE, Pitch.Middle)
     private var tiles: TileGrid? = null
     private val shipFactory = ShipFactory()
     private var renderer = Renderer()
     private val entities: MutableList<Entity> = ArrayList()
 
+    private var camPanUp = DiscreteKey(Configs.Controls.CAMERA_PAN_UP)
+    private var camPanDown = DiscreteKey(Configs.Controls.CAMERA_PAN_DOWN)
     private var camPanLeft = DiscreteKey(Configs.Controls.CAMERA_PAN_LEFT)
     private var camPanRight = DiscreteKey(Configs.Controls.CAMERA_PAN_RIGHT)
     private var camReset = DiscreteKey(Configs.Controls.CAMERA_RESET)
@@ -49,6 +52,8 @@ class Game : GameLike {
     }
 
     override fun input(window: Window, mouse: Mouse) {
+        camPanUp.update(window)
+        camPanDown.update(window)
         camPanLeft.update(window)
         camPanRight.update(window)
         camReset.update(window)
@@ -60,8 +65,16 @@ class Game : GameLike {
 
     override fun updateState(mouse: Mouse) {
         if (camReset.use()) {
-            camera.reset(Configs.Camera.DEFAULT_ANGLE)
+            camera.reset()
         } else {
+            if (camPanUp.use()) {
+                camera.panUp()
+            }
+
+            if (camPanDown.use()) {
+                camera.panDown()
+            }
+
             if (camPanLeft.use()) {
                 camera.panLeft()
             }
