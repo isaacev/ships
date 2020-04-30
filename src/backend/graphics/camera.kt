@@ -85,10 +85,6 @@ private class AnimatedDegree<T : ToDegrees>(initial: T) : Animated {
         return angle
     }
 
-    fun getDouble(): Double {
-        return angle.toDouble()
-    }
-
     override fun nextFrame(delta: Duration) {
         if (!isMoving) {
             return
@@ -116,65 +112,37 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
     private val yaw = AnimatedDegree(yaw)
     private val pitch = AnimatedDegree(pitch)
 
-    // private var direction = yaw
-    // private var angle = yaw.toDegrees() - 90f // why add 90f? who tf knows
     private val focus = Vector3f()
+
+    private val cachedPosition = Vector3f()
+    private val cachedRotation = Vector3f()
+    private val cachedNormal = Vector3f()
+    private val cachedViewMatrix = Matrix4f()
 
     override val fieldOfView: Degrees = 60f
     override val zNear: Units = 0.001f
     override val zFar: Units = 1_000f
 
-    override val position: Vector3f
-        get() {
-            // Necessary because toRadians uses x-axis as 0deg, we want to use the y-axis as the 0deg instead
-            val offsetYaw = yaw.getDouble() - 90.0
+    init {
+        updateCachedValues()
+    }
 
-            val x = RADIUS * sin(Math.toRadians(pitch.getDouble())) * cos(Math.toRadians(offsetYaw))
-            val y = RADIUS * cos(Math.toRadians(pitch.getDouble()))
-            val z = RADIUS * sin(Math.toRadians(pitch.getDouble())) * sin(Math.toRadians(offsetYaw))
-            return Vector3f(x.toFloat() + focus.x, y.toFloat() + focus.y, z.toFloat() + focus.z)
-        }
+    override val position: Vector3f
+        get() = cachedPosition
 
     override val normal: Vector3f
-        get() {
-            // Necessary because toRadians uses x-axis as 0deg, we want to use the y-axis as the 0deg instead
-            val offsetYaw = yaw.getDouble() - 90.0
-
-            val x = RADIUS * sin(Math.toRadians(pitch.getDouble())) * cos(Math.toRadians(offsetYaw))
-            val y = RADIUS * cos(Math.toRadians(pitch.getDouble()))
-            val z = RADIUS * sin(Math.toRadians(pitch.getDouble())) * sin(Math.toRadians(offsetYaw))
-            return Vector3f(-x.toFloat(), -y.toFloat(), -z.toFloat())
-        }
+        get() = cachedNormal
 
     override val rotation: Vector3f
-        get() {
-            val lat = -pitch.getFloat() + 90f
-            val lon = (yaw.getFloat() + 180f) % 360f
-            return Vector3f(lat, lon, 0f)
-        }
+        get() = cachedRotation
 
-    // FIXME: cache this
     override val viewMatrix: Matrix4f
-        get() {
-            val pos = position
-            val rot = rotation
-            val mat = Matrix4f().identity()
-
-            // Apply the rotation...
-            val xRad = Math.toRadians(rot.x.toDouble())
-            val yRad = Math.toRadians(rot.y.toDouble())
-            mat.rotate(xRad.toFloat(), Vector3f(1f, 0f, 0f))
-                .rotate(yRad.toFloat(), Vector3f(0f, 1f, 0f))
-
-            // ...then apply the translation
-            mat.translate(-pos.x, -pos.y, -pos.z)
-
-            return mat
-        }
+        get() = cachedViewMatrix
 
     override fun nextFrame(delta: Duration) {
         yaw.nextFrame(delta)
         pitch.nextFrame(delta.fresh())
+        updateCachedValues()
     }
 
     fun panUp() {
@@ -226,6 +194,14 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
     private fun moveTo(yaw: HexDirection = this.yaw.getValue(), pitch: Pitch = this.pitch.getValue()) {
         this.yaw.moveTo(yaw)
         this.pitch.moveTo(pitch)
+        updateCachedValues()
+    }
+
+    private fun updateCachedValues() {
+        calcCameraPosition(RADIUS, focus, yaw.getFloat(), pitch.getFloat(), cachedPosition)
+        calcCameraRotation(yaw.getFloat(), pitch.getFloat(), cachedRotation)
+        calcCameraNormal(RADIUS, yaw.getFloat(), pitch.getFloat(), cachedNormal)
+        calcCameraViewMatrix(cachedPosition, cachedRotation, cachedViewMatrix)
     }
 
     fun mouseRayGroundPlaneIntersection(window: Window, mouse: Mouse, projectionMatrix: Matrix4f): Vector2f? {
@@ -265,4 +241,52 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
             Vector2f(point.x, point.z)
         }
     }
+}
+
+private fun calcCameraPosition(radius: Units, focus: Vector3f, yaw: Degrees, pitch: Degrees, dest: Vector3f) {
+    // Subtract 90deg from the yaw because the toRadians function expects
+    // degrees relative to the x-axis but the original yaw value is
+    // relative to the y-axis instead
+    val yawRad = Math.toRadians((yaw - 90f).toDouble())
+    val pitchRad = Math.toRadians(pitch.toDouble())
+
+    val x = focus.x + radius * sin(pitchRad) * cos(yawRad)
+    val y = focus.y + radius * cos(pitchRad)
+    val z = focus.z + radius * sin(pitchRad) * sin(yawRad)
+
+    dest.set(x, y, z)
+}
+
+private fun calcCameraNormal(radius: Units, yaw: Degrees, pitch: Degrees, dest: Vector3f) {
+    // Subtract 90deg from the yaw because the toRadians function expects
+    // degrees relative to the x-axis but the original yaw value is
+    // relative to the y-axis instead
+    val yawRad = Math.toRadians((yaw - 90f).toDouble())
+    val pitchRad = Math.toRadians(pitch.toDouble())
+
+    val x = -radius * sin(pitchRad) * cos(yawRad)
+    val y = -radius * cos(pitchRad)
+    val z = -radius * sin(pitchRad)
+
+    dest.set(x, y, z)
+}
+
+private fun calcCameraRotation(yaw: Degrees, pitch: Degrees, dest: Vector3f) {
+    val lat = -pitch + 90f
+    val lon = (yaw + 180f) % 360f
+
+    dest.set(lat, lon, 0f)
+}
+
+private fun calcCameraViewMatrix(pos: Vector3f, rot: Vector3f, dest: Matrix4f) {
+    dest.identity()
+
+    // Apply the rotation...
+    val xRad = Math.toRadians(rot.x.toDouble())
+    val yRad = Math.toRadians(rot.y.toDouble())
+    dest.rotate(xRad.toFloat(), 1f, 0f, 0f)
+        .rotate(yRad.toFloat(), 0f, 1f, 0f)
+
+    // ...then apply the translation
+    dest.translate(-pos.x, -pos.y, -pos.z)
 }
