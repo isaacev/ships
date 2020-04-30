@@ -3,7 +3,7 @@ package frontend.game
 import backend.color
 import backend.engine.Duration
 import backend.engine.GameLike
-import backend.graphics.FocusedOrthographicCamera
+import backend.graphics.OrbitalCamera
 import backend.graphics.Renderer
 import backend.inputs.DiscreteKey
 import backend.inputs.Mouse
@@ -17,7 +17,7 @@ import frontend.game.hexagons.HexDirection
 import frontend.game.hexagons.TileGrid
 
 class Game : GameLike {
-    private var camera = FocusedOrthographicCamera(Configs.Camera.DEFAULT_ANGLE)
+    private var camera = OrbitalCamera(Configs.Camera.DEFAULT_ANGLE)
     private var tiles: TileGrid? = null
     private val shipFactory = ShipFactory()
     private var renderer = Renderer()

@@ -2,7 +2,6 @@ package backend.window
 
 import backend.inputs.ButtonCode
 import backend.inputs.KeyCode
-import org.joml.Matrix4f
 import org.joml.Vector2i
 import org.lwjgl.BufferUtils
 import org.lwjgl.glfw.GLFW
@@ -25,12 +24,6 @@ interface WindowConfigs {
 }
 
 class Window(configs: WindowConfigs) {
-    private val constants = object {
-        val ZOOM: Float = 48f
-        val Z_NEAR: Float = -1f
-        val Z_FAR: Float = 1_000f
-    }
-
     private val title = configs.title
     private var handle = 0L
     private val screenSize = ScreenCoordinate(configs.width, configs.height)
@@ -38,7 +31,6 @@ class Window(configs: WindowConfigs) {
     private var devicePixelRatio = 1
     private var wasResized = false
     private var vSync = configs.vSync
-    val projectionMatrix = Matrix4f()
 
     init {
         // Create an error callback that's just STDERR
@@ -188,16 +180,6 @@ class Window(configs: WindowConfigs) {
 
     fun isKeyReleased(keyCode: KeyCode): Boolean {
         return GLFW.glfwGetKey(handle, keyCode) == GLFW.GLFW_RELEASE
-    }
-
-    fun updateProjectionMatrix() {
-        val orthoWidth: Float = getScreenWidth() / constants.ZOOM
-        val orthoHeight: Float = getScreenHeight() / constants.ZOOM
-        val fracWidth: Float = orthoWidth / 2f
-        val fracHeight: Float = orthoHeight / 2f
-        projectionMatrix.setOrtho(
-            -fracWidth, +fracWidth, -fracHeight, +fracHeight, constants.Z_NEAR, constants.Z_FAR
-        )
     }
 
     fun resetDrawSettings() {

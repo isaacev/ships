@@ -6,9 +6,14 @@ import backend.animation.Animated
 import backend.animation.Easing
 import backend.engine.Duration
 import backend.engine.Milliseconds
+import backend.inputs.Mouse
+import backend.window.Window
 import frontend.game.hexagons.HexDirection
+import org.joml.Intersectionf
 import org.joml.Matrix4f
+import org.joml.Vector2f
 import org.joml.Vector3f
+import org.joml.Vector4f
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -18,12 +23,15 @@ interface Camera {
     val rotation: Vector3f
     val normal: Vector3f
     val viewMatrix: Matrix4f
+    val fieldOfView: Degrees
+    val zNear: Units
+    val zFar: Units
 }
 
-class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
+class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
     companion object Constants {
         const val LATITUDE: Degrees = 45f
-        const val RADIUS: Units = 10f
+        const val RADIUS: Units = 20f
         const val CUTOFF: Degrees = 1f
         const val DURATION: Milliseconds = 200f
     }
@@ -31,6 +39,10 @@ class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
     private var direction = viewingAngle
     private var angle = viewingAngle.toDegrees() - 90f // why add 90f? who tf knows
     private val focus = Vector3f()
+
+    override val fieldOfView: Degrees = 60f
+    override val zNear: Units = 0.001f
+    override val zFar: Units = 1_000f
 
     // Animation variables
     private var isMoving = false
@@ -61,6 +73,7 @@ class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
             return Vector3f(lat, lon, 0f)
         }
 
+    // FIXME: cache this
     override val viewMatrix: Matrix4f
         get() {
             val pos = position
@@ -145,5 +158,43 @@ class FocusedOrthographicCamera(viewingAngle: HexDirection) : Camera, Animated {
         }
 
         progress = 0f
+    }
+
+    fun mouseRayGroundPlaneIntersection(window: Window, mouse: Mouse, projectionMatrix: Matrix4f): Vector2f? {
+        val x: Float = (2f * mouse.x) / window.getScreenWidth().toFloat() - 1f
+        val y: Float = 1f - (2f * mouse.y) / window.getScreenHeight().toFloat()
+        val z: Float = -1f
+
+        val inverseProjectionMatrix = Matrix4f()
+        inverseProjectionMatrix.set(projectionMatrix)
+        inverseProjectionMatrix.invert()
+
+        val vec = Vector4f()
+        vec.set(x, y, z, 1f)
+        vec.mul(inverseProjectionMatrix)
+        vec.z = -1f
+        vec.w = 0f
+
+        val inverseViewMatrix = Matrix4f()
+        inverseViewMatrix.set(viewMatrix)
+        inverseViewMatrix.invert()
+        vec.mul(inverseViewMatrix)
+
+        val rayOrigin = position
+        val rayDirection = Vector3f(vec.x, vec.y, vec.z)
+        val planePoint = Vector3f(0f, 0f, 0f)
+        val planeNormal = Vector3f(0f, 1f, 0f)
+        val epsilon = 0.0001f // Used to catch divide by zero errors if ray parallel to plane
+
+        val t = Intersectionf.intersectRayPlane(rayOrigin, rayDirection, planePoint, planeNormal, epsilon)
+
+        return if (t == -1f) {
+            // Ray didn't intersect the plane
+            null
+        } else {
+            // Use the formula: `p(t) = rayOrigin + t * rayDirection` to compute the intersection point coordinates
+            val point = rayOrigin.add(rayDirection.mul(t))
+            Vector2f(point.x, point.z)
+        }
     }
 }

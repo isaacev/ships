@@ -1,6 +1,9 @@
 package backend.graphics
 
+import backend.Degrees
+import backend.Units
 import backend.memory.Entity
+import backend.window.ScreenPixels
 import backend.window.Window
 import frontend.Configs
 import frontend.game.hexagons.TileGrid
@@ -12,14 +15,13 @@ import org.lwjgl.opengl.GL30.glBindVertexArray
 class Renderer {
     private val transform = Transform()
 
-    private fun renderEntity(window: Window, viewMatrix: Matrix4f, entity: Entity) {
+    private fun renderEntity(projectionMatrix: Matrix4f, viewMatrix: Matrix4f, entity: Entity) {
         val shader = entity.shader
         shader.bind()
 
         // Set globals uniforms
-        shader.setUniform("projectionMatrix", window.projectionMatrix)
-            .setUniform("lightDirection", Configs.Lighting.DIRECTION).setUniform("lightColor", Configs.Lighting.COLOR)
-            .setUniform("lightBias", Configs.Lighting.BIAS)
+        shader.setUniform("projectionMatrix", projectionMatrix).setUniform("lightDirection", Configs.Lighting.DIRECTION)
+            .setUniform("lightColor", Configs.Lighting.COLOR).setUniform("lightBias", Configs.Lighting.BIAS)
 
         // Defer to entity for custom uniforms
         entity.setShaderUniforms(shader)
@@ -42,16 +44,24 @@ class Renderer {
         // Clear the framebuffer and other preparations for a fresh render
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
         glViewport(0, 0, window.getPixelWidth(), window.getPixelHeight())
-        window.updateProjectionMatrix()
+
+        val projectionMatrix2 = transform.getProjectionMatrix(
+            camera.fieldOfView, window.getScreenWidth(), window.getScreenHeight(), camera.zNear, camera.zFar
+        )
 
         val viewMatrix = camera.viewMatrix
-        tiles?.forEach { renderEntity(window, viewMatrix, it) }
-        entities.forEach { renderEntity(window, viewMatrix, it) }
+        tiles?.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
+        entities.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
+    }
+
+    fun getProjectionMatrix(): Matrix4f {
+        return transform.projectionMatrix
     }
 }
 
 private class Transform {
     private val modelViewMatrix = Matrix4f()
+    val projectionMatrix = Matrix4f()
 
     fun getModelViewMatrix(rot: Vector3f, pos: Vector3f, scale: Float, viewMatrix: Matrix4f): Matrix4f {
         modelViewMatrix.identity().translate(pos).rotateX(Math.toRadians(-rot.x.toDouble()).toFloat())
@@ -60,5 +70,13 @@ private class Transform {
 
         val copyOfViewMatrix = Matrix4f(viewMatrix)
         return copyOfViewMatrix.mul(modelViewMatrix)
+    }
+
+    fun getProjectionMatrix(
+        fov: Degrees, width: ScreenPixels, height: ScreenPixels, zNear: Units, zFar: Units
+    ): Matrix4f {
+        return projectionMatrix.setPerspective(
+            Math.toRadians(fov.toDouble()).toFloat(), width.toFloat() / height, zNear, zFar
+        )
     }
 }
