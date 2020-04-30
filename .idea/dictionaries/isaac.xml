@@ -2,7 +2,9 @@
   <dictionary name="isaac">
     <words>
       <w>coord</w>
+      <w>coords</w>
       <w>shaders</w>
+      <w>succ</w>
     </words>
   </dictionary>
 </component>
