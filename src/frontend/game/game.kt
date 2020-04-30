@@ -6,6 +6,7 @@ import backend.engine.GameLike
 import backend.graphics.OrbitalCamera
 import backend.graphics.Pitch
 import backend.graphics.Renderer
+import backend.graphics.Zoom
 import backend.inputs.DiscreteClick
 import backend.inputs.DiscreteKey
 import backend.inputs.Mouse
@@ -22,7 +23,7 @@ import frontend.game.hexagons.TileGrid
 import frontend.game.hexagons.pointToHex
 
 class Game : GameLike {
-    private var camera = OrbitalCamera(Configs.Camera.DEFAULT_ANGLE, Pitch.Middle)
+    private var camera = OrbitalCamera(HexDirection.Top, Pitch.Middle, Zoom.Farthest)
     private var tiles: TileGrid? = null
     private val shipFactory = ShipFactory()
     private var renderer = Renderer()
@@ -32,6 +33,8 @@ class Game : GameLike {
     private var camPanDown = DiscreteKey(Configs.Controls.CAMERA_PAN_DOWN)
     private var camPanLeft = DiscreteKey(Configs.Controls.CAMERA_PAN_LEFT)
     private var camPanRight = DiscreteKey(Configs.Controls.CAMERA_PAN_RIGHT)
+    private var camZoomIn = DiscreteKey(Configs.Controls.CAMERA_ZOOM_IN)
+    private var camZoomOut = DiscreteKey(Configs.Controls.CAMERA_ZOOM_OUT)
     private var camReset = DiscreteKey(Configs.Controls.CAMERA_RESET)
     private var selectTile = DiscreteClick(Configs.Controls.SELECT_TILE)
 
@@ -56,6 +59,8 @@ class Game : GameLike {
         camPanDown.update(window)
         camPanLeft.update(window)
         camPanRight.update(window)
+        camZoomIn.update(window)
+        camZoomOut.update(window)
         camReset.update(window)
         selectTile.update(window)
 
@@ -82,6 +87,9 @@ class Game : GameLike {
             if (camPanRight.use()) {
                 camera.panRight()
             }
+
+            if (camZoomIn.use()) camera.zoomIn()
+            if (camZoomOut.use()) camera.zoomOut()
         }
 
         if (selectTile.use() && hoverCoord != null) {

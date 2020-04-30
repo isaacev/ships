@@ -3,7 +3,16 @@ package backend
 import org.joml.Vector3f
 
 typealias Units = Float
+
+interface ToUnits {
+    fun toUnits(): Units
+}
+
 typealias Degrees = Float
+
+interface ToDegrees {
+    fun toDegrees(): Degrees
+}
 
 typealias Color = Vector3f
 
@@ -16,8 +25,4 @@ fun color(hex: Int): Color {
     val g = (hex and 0x00ff00) ushr 8
     val b = (hex and 0x0000ff)
     return color(r, g, b)
-}
-
-interface ToDegrees {
-    fun toDegrees(): Degrees
 }

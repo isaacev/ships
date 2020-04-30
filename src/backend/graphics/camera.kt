@@ -2,6 +2,7 @@ package backend.graphics
 
 import backend.Degrees
 import backend.ToDegrees
+import backend.ToUnits
 import backend.Units
 import backend.animation.Animated
 import backend.animation.Easing
@@ -37,6 +38,65 @@ enum class Pitch : ToDegrees {
             Highest -> 20f
             Middle  -> 45f
             Lowest  -> 70f
+        }
+    }
+}
+
+enum class Zoom : ToUnits {
+    Closest, Middle, Farthest;
+
+    override fun toUnits(): Units {
+        return when (this) {
+            Closest  -> 8f
+            Middle   -> 14f
+            Farthest -> 20f
+        }
+    }
+}
+
+private class AnimatedUnit<T : ToUnits>(initial: T) : Animated {
+    private var value: T = initial
+    private var units: Units = initial.toUnits()
+    private var isMoving: Boolean = false
+    private var startUnits: Degrees = initial.toUnits()
+    private var finishUnits: Degrees = initial.toUnits()
+    private var progress: Milliseconds = 0f
+
+    fun getValue(): T {
+        return value
+    }
+
+    fun getFloat(): Float {
+        return units
+    }
+
+    fun moveTo(newValue: T) {
+        if (isMoving) {
+            // Ignore because the camera is currently in motion
+            return
+        } else if (value == newValue) {
+            // Ignore because the new value is the same as the current heading
+            return
+        }
+
+        value = newValue
+        isMoving = true
+        startUnits = units
+        finishUnits = newValue.toUnits()
+        progress = 0f
+    }
+
+    override fun nextFrame(delta: Duration) {
+        if (!isMoving) {
+            return
+        }
+
+        progress += delta.request(OrbitalCamera.DURATION - progress)
+        units = Easing.InOutQuad.calc(progress, OrbitalCamera.DURATION, startUnits, finishUnits)
+
+        if (abs(finishUnits - units) < OrbitalCamera.UNITS_CUTOFF) {
+            units = finishUnits
+            isMoving = false
         }
     }
 }
@@ -93,24 +153,27 @@ private class AnimatedDegree<T : ToDegrees>(initial: T) : Animated {
         progress += delta.request(OrbitalCamera.DURATION - progress)
         angle = Easing.InOutQuad.calc(progress, OrbitalCamera.DURATION, startAngle, finishAngle)
 
-        if (abs(finishAngle - angle) < OrbitalCamera.CUTOFF) {
+        if (abs(finishAngle - angle) < OrbitalCamera.CUTOFF_DEGREES) {
             angle = finishAngle % 360
             isMoving = false
         }
     }
 }
 
-class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
+class OrbitalCamera(yaw: HexDirection, pitch: Pitch, zoom: Zoom) : Camera, Animated {
     companion object Constants {
-        const val RADIUS: Units = 20f
-        const val CUTOFF: Degrees = 1f
+        const val CUTOFF_DEGREES: Degrees = 1f
+        const val UNITS_CUTOFF: Units = .1f
         const val DURATION: Milliseconds = 200f
     }
 
     private val originalYaw = yaw
     private val originalPitch = pitch
+    private val originalZoom = zoom
+
     private val yaw = AnimatedDegree(yaw)
     private val pitch = AnimatedDegree(pitch)
+    private val zoom = AnimatedUnit(zoom)
 
     private val focus = Vector3f()
 
@@ -142,6 +205,7 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
     override fun nextFrame(delta: Duration) {
         yaw.nextFrame(delta)
         pitch.nextFrame(delta.fresh())
+        zoom.nextFrame(delta.fresh())
         updateCachedValues()
     }
 
@@ -187,20 +251,41 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch) : Camera, Animated {
         moveTo(yaw = newYaw)
     }
 
-    fun reset() {
-        moveTo(yaw = originalYaw, pitch = originalPitch)
+    fun zoomIn() {
+        val newZoom = when (zoom.getValue()) {
+            Zoom.Closest  -> Zoom.Closest
+            Zoom.Middle   -> Zoom.Closest
+            Zoom.Farthest -> Zoom.Middle
+        }
+        moveTo(zoom = newZoom)
     }
 
-    private fun moveTo(yaw: HexDirection = this.yaw.getValue(), pitch: Pitch = this.pitch.getValue()) {
+    fun zoomOut() {
+        val newZoom = when (zoom.getValue()) {
+            Zoom.Closest  -> Zoom.Middle
+            Zoom.Middle   -> Zoom.Farthest
+            Zoom.Farthest -> Zoom.Farthest
+        }
+        moveTo(zoom = newZoom)
+    }
+
+    fun reset() {
+        moveTo(yaw = originalYaw, pitch = originalPitch, zoom = originalZoom)
+    }
+
+    private fun moveTo(
+        yaw: HexDirection = this.yaw.getValue(), pitch: Pitch = this.pitch.getValue(), zoom: Zoom = this.zoom.getValue()
+    ) {
         this.yaw.moveTo(yaw)
         this.pitch.moveTo(pitch)
+        this.zoom.moveTo(zoom)
         updateCachedValues()
     }
 
     private fun updateCachedValues() {
-        calcCameraPosition(RADIUS, focus, yaw.getFloat(), pitch.getFloat(), cachedPosition)
+        calcCameraPosition(zoom.getFloat(), focus, yaw.getFloat(), pitch.getFloat(), cachedPosition)
         calcCameraRotation(yaw.getFloat(), pitch.getFloat(), cachedRotation)
-        calcCameraNormal(RADIUS, yaw.getFloat(), pitch.getFloat(), cachedNormal)
+        calcCameraNormal(zoom.getFloat(), yaw.getFloat(), pitch.getFloat(), cachedNormal)
         calcCameraViewMatrix(cachedPosition, cachedRotation, cachedViewMatrix)
     }
 
