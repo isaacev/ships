@@ -14,7 +14,8 @@ import frontend.game.hexagons.HexDirection
 
 data class ShipStyle(val hull: Color, val sails: Color)
 
-class Ship(coord: HexCubeCoord, heading: HexDirection, val style: ShipStyle, model: SimpleModel) : SimpleEntity(model) {
+class Ship(val coord: HexCubeCoord, val heading: HexDirection, val style: ShipStyle, model: SimpleModel) :
+    SimpleEntity(model) {
     init {
         val cartesian = coord.toCartesian()
         updateEntity(x = cartesian.x, y = cartesian.y, yaw = heading.toDegrees())

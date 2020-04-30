@@ -14,21 +14,33 @@ import org.joml.Vector3f
 const val TILE_SIZE = 1f
 
 class Tile(val coord: HexCubeCoord, model: SimpleModel) : SimpleEntity(model) {
+    var isHovered: Boolean = false
+
     override fun setShaderUniforms(shader: Shader) {
         shader.setUniform("tileTexture", 0)
+            .setUniform("overlayTexture", 1)
+            .setUniform("isHovered", isHovered)
     }
 }
 
-class TileGrid(gridSize: Int) : Managed {
+class TileGrid(val gridSize: Int) : Managed {
     private val models = ModelCatalog()
     private val textures = TextureCatalog()
     private val shaders = ShaderCatalog()
     private val tiles: MutableMap<HexCubeCoord, Tile> = HashMap()
 
     init {
-        val uniforms =
-            listOf("modelViewMatrix", "projectionMatrix", "tileTexture", "lightDirection", "lightColor", "lightBias")
-        val texture = textures.getOrLoad("textures/tiles.png")
+        val uniforms = listOf(
+            "modelViewMatrix",
+            "projectionMatrix",
+            "tileTexture",
+            "overlayTexture",
+            "isHovered",
+            "lightDirection",
+            "lightColor",
+            "lightBias"
+        )
+        val texture = textures.getOrLoad("textures/tiles.png", "textures/overlay.png")
         val shader = shaders.getOrLoad("tile", uniforms)
         val model = makeTileModel(texture, shader, models)
         for (x in -gridSize..+gridSize) {
@@ -47,6 +59,20 @@ class TileGrid(gridSize: Int) : Managed {
 
     fun forEach(cb: (Tile) -> Unit) {
         tiles.forEach { (_, tile) -> cb(tile) }
+    }
+
+    fun getTile(coord: HexCubeCoord): Tile? {
+        return tiles[coord]
+    }
+
+    fun isWithinGrid(coord: HexCubeCoord): Boolean {
+        return coord.absMaxComponent() <= gridSize
+    }
+
+    fun allNavigableNeighbors(coord: HexCubeCoord, blocked: Set<HexCubeCoord>): List<HexCubeCoord> {
+        return HexDirection.values()
+            .map { coord.neighbor(it) }
+            .filter { isWithinGrid(it) && !blocked.contains(it) }
     }
 
     override fun free() {

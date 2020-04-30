@@ -5,6 +5,8 @@ import org.joml.Vector2f
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
@@ -72,9 +74,23 @@ enum class HexDirection {
             TopLeft     -> 300f
         }
     }
+
+    fun angleTo(other: HexDirection): Degrees {
+        val diff = (other.toDegrees() - toDegrees() + 180f) % 360 - 180
+        val normDiff = if (diff < -180f) {
+            diff + 360
+        } else {
+            diff
+        }
+        return abs(normDiff) % 360
+    }
 }
 
 data class HexCubeCoord(val x: Int, val y: Int, val z: Int) {
+    init {
+        assert(x + y + z == 0)
+    }
+
     fun neighbor(dir: HexDirection): HexCubeCoord {
         return when (dir) {
             HexDirection.Top         -> HexCubeCoord(x + 0, y + 1, z - 1)
@@ -94,12 +110,43 @@ data class HexCubeCoord(val x: Int, val y: Int, val z: Int) {
     }
 
     fun toCartesian(size: Float = TILE_SIZE): Vector2f {
-        val cartX = flatHexHorizontalCenterDist(size) * x.toFloat()
-        val cartY = flatHexVerticalCenterDist(size) * ((y - z) / 2f)
+        val cartX: Float = size * ((3f / 2f) * x)
+        val cartY: Float = size * ((SQRT_3 / 2) * x + (SQRT_3 * z))
         return Vector2f(cartX, cartY)
+    }
+
+    fun absMaxComponent(): Int {
+        return max(abs(x), max(abs(y), abs(z)))
     }
 
     override fun toString(): String {
         return "Tile($x $y $z)"
     }
+}
+
+private fun roundToHex(x: Float, y: Float, z: Float): HexCubeCoord {
+    var rx: Int = x.roundToInt()
+    var ry: Int = y.roundToInt()
+    var rz: Int = z.roundToInt()
+
+    val xDiff = abs(rx - x)
+    val yDiff = abs(ry - y)
+    val zDiff = abs(rz - z)
+
+    if (xDiff > yDiff && xDiff > zDiff) {
+        rx = -ry - rz
+    } else if (yDiff > zDiff) {
+        ry = -rx - rz
+    } else {
+        rz = -rx - ry
+    }
+
+    return HexCubeCoord(rx, ry, rz)
+}
+
+fun pointToHex(point: Vector2f, size: Float = TILE_SIZE): HexCubeCoord {
+    val x = ((2f / 3f) * point.x) / size
+    val z = ((-1f / 3f) * point.x + (SQRT_3 / 3) * point.y) / size
+    val y = -x - z
+    return roundToHex(x, y, z)
 }
