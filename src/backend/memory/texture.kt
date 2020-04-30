@@ -59,20 +59,21 @@ class SimpleTexture(private val filename: String) : Texture {
 
     init {
         var buf: ByteBuffer? = null
-        MemoryStack.stackPush().use { stack ->
-            val w = stack.mallocInt(1)
-            val h = stack.mallocInt(1)
-            val channels = stack.mallocInt(1)
+        MemoryStack.stackPush()
+            .use { stack ->
+                val w = stack.mallocInt(1)
+                val h = stack.mallocInt(1)
+                val channels = stack.mallocInt(1)
 
-            buf = STBImage.stbi_load(filename, w, h, channels, 4)
+                buf = STBImage.stbi_load(filename, w, h, channels, 4)
 
-            @Suppress("SENSELESS_COMPARISON") if (buf == null) {
-                error("unable to load $filename: ${STBImage.stbi_failure_reason()}")
+                @Suppress("SENSELESS_COMPARISON") if (buf == null) {
+                    error("unable to load $filename: ${STBImage.stbi_failure_reason()}")
+                }
+
+                width = w.get()
+                height = h.get()
             }
-
-            width = w.get()
-            height = h.get()
-        }
 
         textureId = createTexture(buf!!)
         STBImage.stbi_image_free(buf)

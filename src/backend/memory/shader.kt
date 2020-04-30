@@ -87,18 +87,20 @@ class Shader(private val directory: String, uniforms: List<UniformName>) : Manag
     }
 
     fun setUniform(name: UniformName, matrix: Matrix4f): Shader {
-        MemoryStack.stackPush().use { stack ->
-            glUniformMatrix4fv(
-                uniforms[name] ?: error("tried to set unknown uniform named $name"),
-                false,
-                matrix.get(stack.mallocFloat(16))
-            )
-        }
+        MemoryStack.stackPush()
+            .use { stack ->
+                glUniformMatrix4fv(
+                    uniforms[name] ?: error("tried to set unknown uniform named $name"),
+                    false,
+                    matrix.get(stack.mallocFloat(16))
+                )
+            }
         return this
     }
 
     private fun readShader(directory: String, filename: String): String {
-        return Shader::class.java.getResource("/resources/shaders/$directory/$filename").readText()
+        return Shader::class.java.getResource("/resources/shaders/$directory/$filename")
+            .readText()
     }
 
     private fun readAndLoadShader(directory: String, filename: String, shaderType: Int): ShaderId {

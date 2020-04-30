@@ -21,7 +21,9 @@ class Ship(coord: HexCubeCoord, heading: HexDirection, val style: ShipStyle, mod
     }
 
     override fun setShaderUniforms(shader: Shader) {
-        shader.setUniform("shipTexture", 0).setUniform("hullColor", style.hull).setUniform("sailColor", style.sails)
+        shader.setUniform("shipTexture", 0)
+            .setUniform("hullColor", style.hull)
+            .setUniform("sailColor", style.sails)
     }
 }
 

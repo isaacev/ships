@@ -81,8 +81,10 @@ class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
             val mat = Matrix4f().identity()
 
             // Apply the rotation...
-            mat.rotate(Math.toRadians(rot.x.toDouble()).toFloat(), Vector3f(1f, 0f, 0f))
-                .rotate(Math.toRadians(rot.y.toDouble()).toFloat(), Vector3f(0f, 1f, 0f))
+            val xRad = Math.toRadians(rot.x.toDouble())
+            val yRad = Math.toRadians(rot.y.toDouble())
+            mat.rotate(xRad.toFloat(), Vector3f(1f, 0f, 0f))
+                .rotate(yRad.toFloat(), Vector3f(0f, 1f, 0f))
 
             // ...then apply the translation
             mat.translate(-pos.x, -pos.y, -pos.z)
@@ -161,8 +163,8 @@ class OrbitalCamera(viewingAngle: HexDirection) : Camera, Animated {
     }
 
     fun mouseRayGroundPlaneIntersection(window: Window, mouse: Mouse, projectionMatrix: Matrix4f): Vector2f? {
-        val x: Float = (2f * mouse.x) / window.getScreenWidth().toFloat() - 1f
-        val y: Float = 1f - (2f * mouse.y) / window.getScreenHeight().toFloat()
+        val x: Float = (2f * mouse.x) / window.getScreenWidth() - 1f
+        val y: Float = 1f - (2f * mouse.y) / window.getScreenHeight()
         val z: Float = -1f
 
         val inverseProjectionMatrix = Matrix4f()

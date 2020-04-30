@@ -34,7 +34,8 @@ class Window(configs: WindowConfigs) {
 
     init {
         // Create an error callback that's just STDERR
-        GLFWErrorCallback.createPrint(System.err).set()
+        GLFWErrorCallback.createPrint(System.err)
+            .set()
 
         // Initialize GLFW. Most GLFW functions will not work before this
         if (!GLFW.glfwInit()) error("unable to initialize GLFW")

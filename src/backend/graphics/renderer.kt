@@ -20,8 +20,10 @@ class Renderer {
         shader.bind()
 
         // Set globals uniforms
-        shader.setUniform("projectionMatrix", projectionMatrix).setUniform("lightDirection", Configs.Lighting.DIRECTION)
-            .setUniform("lightColor", Configs.Lighting.COLOR).setUniform("lightBias", Configs.Lighting.BIAS)
+        shader.setUniform("projectionMatrix", projectionMatrix)
+            .setUniform("lightDirection", Configs.Lighting.DIRECTION)
+            .setUniform("lightColor", Configs.Lighting.COLOR)
+            .setUniform("lightBias", Configs.Lighting.BIAS)
 
         // Defer to entity for custom uniforms
         entity.setShaderUniforms(shader)
@@ -64,8 +66,14 @@ private class Transform {
     val projectionMatrix = Matrix4f()
 
     fun getModelViewMatrix(rot: Vector3f, pos: Vector3f, scale: Float, viewMatrix: Matrix4f): Matrix4f {
-        modelViewMatrix.identity().translate(pos).rotateX(Math.toRadians(-rot.x.toDouble()).toFloat())
-            .rotateY(Math.toRadians(-rot.y.toDouble()).toFloat()).rotateZ(Math.toRadians(-rot.z.toDouble()).toFloat())
+        val radX = Math.toRadians(-rot.x.toDouble())
+        val radY = Math.toRadians(-rot.y.toDouble())
+        val radZ = Math.toRadians(-rot.z.toDouble())
+        modelViewMatrix.identity()
+            .translate(pos)
+            .rotateX(radX.toFloat())
+            .rotateY(radY.toFloat())
+            .rotateZ(radZ.toFloat())
             .scale(scale)
 
         val copyOfViewMatrix = Matrix4f(viewMatrix)
@@ -76,7 +84,8 @@ private class Transform {
         fov: Degrees, width: ScreenPixels, height: ScreenPixels, zNear: Units, zFar: Units
     ): Matrix4f {
         return projectionMatrix.setPerspective(
-            Math.toRadians(fov.toDouble()).toFloat(), width.toFloat() / height, zNear, zFar
+            Math.toRadians(fov.toDouble())
+                .toFloat(), width.toFloat() / height, zNear, zFar
         )
     }
 }

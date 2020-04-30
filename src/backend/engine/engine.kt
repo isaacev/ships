@@ -6,10 +6,7 @@ import backend.window.Window
 import backend.window.WindowConfigs
 
 private enum class State {
-    Booting,
-    Loading,
-    Running,
-    Closing,
+    Booting, Loading, Running, Closing,
 }
 
 interface EngineConfigs {
@@ -18,7 +15,7 @@ interface EngineConfigs {
     val window: WindowConfigs
 }
 
-interface GameLike: Managed {
+interface GameLike : Managed {
     fun load()
 
     fun input(window: Window, mouse: Mouse)
@@ -30,7 +27,7 @@ interface GameLike: Managed {
     fun render(window: Window)
 }
 
-class Engine(private val game: GameLike, private val configs: backend.engine.EngineConfigs): Runnable, Managed {
+class Engine(private val game: GameLike, private val configs: backend.engine.EngineConfigs) : Runnable, Managed {
     private var state = State.Booting
     private val window = Window(configs.window)
     private val mouse = Mouse(window)
