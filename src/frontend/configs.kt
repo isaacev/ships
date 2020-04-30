@@ -18,7 +18,7 @@ object Configs {
     }
 
     object Lighting {
-        private const val BIAS_AMBIENT = .4f
+        private const val BIAS_AMBIENT = .6f
         private const val BIAS_DIFFUSE = .8f
 
         val DIRECTION = Vector3f(0f, -1f, 0f)
