@@ -12,13 +12,13 @@ typealias TextureId = Int
 class TextureCatalog : Managed {
     private val textures: MutableMap<String, Texture> = HashMap()
 
-    fun load(filename: String): Texture {
+    private fun load(filename: String): Texture {
         val texture = SimpleTexture(filename)
         textures[filename] = texture
         return texture
     }
 
-    fun load(underlay: String, overlay: String): Texture {
+    private fun load(underlay: String, overlay: String): Texture {
         val texture = TextureWithOverlay(underlay, overlay)
         textures["$underlay $overlay"] = texture
         return texture
