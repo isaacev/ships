@@ -1,14 +1,73 @@
 package frontend.game.hexagons
 
+import backend.Color
+
 data class Step(val start: HexCubeCoord, val finish: HexCubeCoord, val heading: HexDirection)
 
 data class Path(val steps: List<Step>) {
     val size: Int
         get() = steps.size
 
+    private fun toCoords(): List<HexCubeCoord> {
+        if (steps.isEmpty()) {
+            return ArrayList()
+        }
+
+        val coords = mutableListOf(steps.first().start)
+        steps.forEach { coords.add(it.finish) }
+        return coords
+    }
+
+    fun toOverlays(tint: Color): Map<HexCubeCoord, TileOverlay> {
+        if (size < 1) {
+            return HashMap()
+        }
+
+        val coords = toCoords()
+        val pairs: MutableMap<HexCubeCoord, TileOverlay> = HashMap()
+        coords.forEachIndexed { index, coord ->
+            if (index == 0) {
+                val dir = headingFromCoords(coords[index + 1], coord)
+                pairs[coord] = TileOverlay(TileOverlay.Which.Terminus, dir, tint)
+            } else if (index == coords.size - 1) {
+                val dir = headingFromCoords(coords[index - 1], coord)
+                pairs[coord] = TileOverlay(TileOverlay.Which.Terminus, dir, tint)
+            } else {
+                val before = coords[index - 1]
+                val after = coords[index + 1]
+                val dirIn = headingFromCoords(before, coord)
+                val dirOut = headingFromCoords(coord, after)
+
+                if (dirIn == dirOut) {
+                    pairs[coord] = TileOverlay(TileOverlay.Which.Straight, dirIn, tint)
+                } else {
+                    val dir = when (dirIn.toDegrees() - dirOut.toDegrees()) {
+                        60f   -> rotateHeadingSixtyDeg(dirIn)
+                        -300f -> rotateHeadingSixtyDeg(dirIn)
+                        else  -> dirIn
+                    }
+                    pairs[coord] = TileOverlay(TileOverlay.Which.Obtuse, dir, tint)
+                }
+            }
+        }
+
+        return pairs
+    }
+
     override fun toString(): String {
         return steps.map { it.heading }
             .joinToString(" -> ")
+    }
+}
+
+private fun rotateHeadingSixtyDeg(dir: HexDirection): HexDirection {
+    return when (dir) {
+        HexDirection.Top         -> HexDirection.BottomRight
+        HexDirection.TopRight    -> HexDirection.Bottom
+        HexDirection.BottomRight -> HexDirection.BottomLeft
+        HexDirection.Bottom      -> HexDirection.TopLeft
+        HexDirection.BottomLeft  -> HexDirection.Top
+        HexDirection.TopLeft     -> HexDirection.TopRight
     }
 }
 
@@ -46,9 +105,8 @@ fun headingFromCoords(from: HexCubeCoord, to: HexCubeCoord): HexDirection {
 
 private typealias Distance = Int
 
-class Pathfinder(
-    private val origin: HexCubeCoord, private val heading: HexDirection, grid: TileGrid, blocked: Set<HexCubeCoord>
-) {
+class Pathfinder(origin: HexCubeCoord, heading: HexDirection, grid: TileGrid, blocked: Set<HexCubeCoord>) {
+    private val first: Node
     private val dist: Map<Node, Distance>
     private val order: Map<Node, Node>
 
@@ -65,7 +123,7 @@ class Pathfinder(
         val max = Int.MAX_VALUE
 
         // Initialize with starting data
-        val first = Node(origin, heading)
+        first = Node(origin, heading)
         distAcc[first] = 0
         todo.add(first)
 
@@ -92,7 +150,13 @@ class Pathfinder(
              */
             grid.allNavigableNeighbors(curr.coord, blocked)
                 .map { curr.fromCoord(it) }
-                .filter { curr.heading.angleTo(it.heading) < 90f }
+                .filter {
+                    if (curr == first) {
+                        it.heading == first.heading
+                    } else {
+                        curr.heading.angleTo(it.heading) < 90f
+                    }
+                }
                 .forEach { succ ->
                     if (!done.contains(succ)) {
                         /* The following condition handles the case where the algorithm
@@ -124,7 +188,7 @@ class Pathfinder(
                 steps.add(Step(start.coord, finish.coord, finish.heading))
             }
 
-            if (start.coord == origin && start.heading == heading) {
+            if (start == first) {
                 break
             } else {
                 finish = start

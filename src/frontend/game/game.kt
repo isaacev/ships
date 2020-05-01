@@ -72,36 +72,22 @@ class Game : GameLike {
         if (camReset.use()) {
             camera.reset()
         } else {
-            if (camPanUp.use()) {
-                camera.panUp()
-            }
-
-            if (camPanDown.use()) {
-                camera.panDown()
-            }
-
-            if (camPanLeft.use()) {
-                camera.panLeft()
-            }
-
-            if (camPanRight.use()) {
-                camera.panRight()
-            }
-
+            if (camPanUp.use()) camera.panUp()
+            if (camPanDown.use()) camera.panDown()
+            if (camPanLeft.use()) camera.panLeft()
+            if (camPanRight.use()) camera.panRight()
             if (camZoomIn.use()) camera.zoomIn()
             if (camZoomOut.use()) camera.zoomOut()
         }
 
         if (selectTile.use() && hoverCoord != null) {
             val blocked = setOf(imperialShip!!.coord)
-            tiles?.forEach { tile -> tile.isHovered = false }
+            tiles?.forEach { tile -> tile.overlay = null }
             val paths = Pathfinder(pirateShip!!.coord, pirateShip!!.heading, tiles!!, blocked)
             paths.toCoord(hoverCoord!!)
                 ?.let { path ->
-                    path.steps.forEach {
-                        tiles?.getTile(it.start)?.isHovered = true
-                        tiles?.getTile(it.finish)?.isHovered = true
-                    }
+                    val overlays = path.toOverlays(color(0x007700))
+                    tiles?.forEach { tile -> tile.overlay = overlays[tile.coord] }
                 }
         }
     }

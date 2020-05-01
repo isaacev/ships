@@ -76,6 +76,16 @@ class Shader(private val directory: String, uniforms: List<UniformName>) : Manag
         return this
     }
 
+    fun setUniform(name: UniformName, num: Float): Shader {
+        glUniform1f(uniforms[name] ?: error("tried to set unknown uniform named $name"), num)
+        return this
+    }
+
+    fun setUniform(name: UniformName, num: Double): Shader {
+        glUniform1f(uniforms[name] ?: error("tried to set unknown uniform named $name"), num.toFloat())
+        return this
+    }
+
     fun setUniform(name: UniformName, vec: Vector2f): Shader {
         glUniform2f(uniforms[name] ?: error("tried to set unknown uniform named $name"), vec.x, vec.y)
         return this

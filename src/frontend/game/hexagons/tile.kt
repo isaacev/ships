@@ -1,5 +1,7 @@
 package frontend.game.hexagons
 
+import backend.Color
+import backend.color
 import backend.memory.Managed
 import backend.memory.Mesh
 import backend.memory.ModelCatalog
@@ -13,17 +15,45 @@ import org.joml.Vector3f
 
 const val TILE_SIZE = 1f
 
+val FALLBACK_TINT = color(0xffffff)
+
 class Tile(val coord: HexCubeCoord, model: SimpleModel) : SimpleEntity(model) {
-    var isHovered: Boolean = false
+    var overlay: TileOverlay? = null
 
     override fun setShaderUniforms(shader: Shader) {
-        shader.setUniform("tileTexture", 0)
+        shader.setUniform("overlayChoice", overlay?.toChoice() ?: -1)
+            .setUniform("tileTexture", 0)
             .setUniform("overlayTexture", 1)
-            .setUniform("isHovered", isHovered)
+            .setUniform("overlayTint", overlay?.tint ?: FALLBACK_TINT)
+            .setUniform(
+                "overlayRotation", Math.toRadians(
+                    overlay?.toRotation()
+                        ?.toDouble() ?: 0.0
+                )
+            )
     }
 }
 
-class TileGrid(val gridSize: Int) : Managed {
+class TileOverlay(private val which: Which, val direction: HexDirection, val tint: Color) {
+    enum class Which {
+        Circle, Terminus, Straight, Obtuse;
+    }
+
+    fun toChoice(): Int {
+        return when (which) {
+            Which.Circle   -> 0
+            Which.Terminus -> 1
+            Which.Straight -> 2
+            Which.Obtuse   -> 3
+        }
+    }
+
+    fun toRotation(): Float {
+        return direction.toDegrees()
+    }
+}
+
+class TileGrid(private val gridSize: Int) : Managed {
     private val models = ModelCatalog()
     private val textures = TextureCatalog()
     private val shaders = ShaderCatalog()
@@ -35,12 +65,14 @@ class TileGrid(val gridSize: Int) : Managed {
             "projectionMatrix",
             "tileTexture",
             "overlayTexture",
-            "isHovered",
+            "overlayRotation",
+            "overlayChoice",
+            "overlayTint",
             "lightDirection",
             "lightColor",
             "lightBias"
         )
-        val texture = textures.getOrLoad("textures/tiles.png", "textures/overlay.png")
+        val texture = textures.getOrLoad("textures/tile_default.png", "textures/overlays.png")
         val shader = shaders.getOrLoad("tile", uniforms)
         val model = makeTileModel(texture, shader, models)
         for (x in -gridSize..+gridSize) {
@@ -65,7 +97,7 @@ class TileGrid(val gridSize: Int) : Managed {
         return tiles[coord]
     }
 
-    fun isWithinGrid(coord: HexCubeCoord): Boolean {
+    private fun isWithinGrid(coord: HexCubeCoord): Boolean {
         return coord.absMaxComponent() <= gridSize
     }
 
@@ -103,9 +135,9 @@ private fun makeTileModel(texture: Texture, shader: Shader, models: ModelCatalog
 
     val normal = Mesh.Builder.normal(vecA, vecC, vecB)
 
-    val texCenterX = 1f / 8f
-    val texCenterY = 1f / 8f
-    val texScalar = .9f / 8f
+    val texCenterX = 1f / 2f
+    val texCenterY = 1f / 2f
+    val texScalar = .9f / 2f
 
     val texA = flatHexCorner(texCenterX, texCenterY, texScalar, 0)
     val texB = flatHexCorner(texCenterX, texCenterY, texScalar, 1)

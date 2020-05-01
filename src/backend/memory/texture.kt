@@ -46,7 +46,10 @@ class TextureCatalog : Managed {
 interface Texture : Managed {
     fun bind()
 
-    fun unbind()
+    fun unbind() {
+        GL30.glBindVertexArray(0)
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
+    }
 }
 
 class SimpleTexture(private val filename: String) : Texture {
@@ -83,11 +86,6 @@ class SimpleTexture(private val filename: String) : Texture {
     override fun bind() {
         GL13.glActiveTexture(GL13.GL_TEXTURE0)
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId)
-    }
-
-    override fun unbind() {
-        GL30.glBindVertexArray(0)
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0)
     }
 
     override fun free() {
