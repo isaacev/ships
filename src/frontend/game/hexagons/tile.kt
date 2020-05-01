@@ -36,7 +36,7 @@ class Tile(val coord: HexCubeCoord, model: SimpleModel) : SimpleEntity(model) {
 
 class TileOverlay(private val which: Which, val direction: HexDirection, val tint: Color) {
     enum class Which {
-        Circle, Terminus, Straight, Obtuse;
+        Circle, Terminus, Straight, Obtuse, Start;
     }
 
     fun toChoice(): Int {
@@ -45,6 +45,7 @@ class TileOverlay(private val which: Which, val direction: HexDirection, val tin
             Which.Terminus -> 1
             Which.Straight -> 2
             Which.Obtuse   -> 3
+            Which.Start    -> 4
         }
     }
 

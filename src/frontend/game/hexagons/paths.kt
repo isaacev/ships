@@ -28,7 +28,7 @@ data class Path(val steps: List<Step>) {
         coords.forEachIndexed { index, coord ->
             if (index == 0) {
                 val dir = headingFromCoords(coords[index + 1], coord)
-                pairs[coord] = TileOverlay(TileOverlay.Which.Terminus, dir, tint)
+                pairs[coord] = TileOverlay(TileOverlay.Which.Start, dir, tint)
             } else if (index == coords.size - 1) {
                 val dir = headingFromCoords(coords[index - 1], coord)
                 pairs[coord] = TileOverlay(TileOverlay.Which.Terminus, dir, tint)

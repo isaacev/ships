@@ -86,7 +86,7 @@ class Game : GameLike {
             val paths = Pathfinder(pirateShip!!.coord, pirateShip!!.heading, tiles!!, blocked)
             paths.toCoord(hoverCoord!!)
                 ?.let { path ->
-                    val overlays = path.toOverlays(color(0x007700))
+                    val overlays = path.toOverlays(color(0x678D74))
                     tiles?.forEach { tile -> tile.overlay = overlays[tile.coord] }
                 }
         }
