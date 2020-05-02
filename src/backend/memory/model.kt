@@ -17,6 +17,7 @@ class ModelCatalog : Managed {
         return model
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <M : Model> getOrLoad(name: String, loader: () -> M): M {
         val knownModel = models[name]
         return if (knownModel != null) {
