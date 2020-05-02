@@ -43,11 +43,12 @@ enum class Pitch : ToDegrees {
 }
 
 enum class Zoom : ToUnits {
-    Closest, Middle, Farthest;
+    Closest, Close, Middle, Farthest;
 
     override fun toUnits(): Units {
         return when (this) {
-            Closest  -> 8f
+            Closest  -> 4f
+            Close    -> 8f
             Middle   -> 14f
             Farthest -> 20f
         }
@@ -254,7 +255,8 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch, zoom: Zoom) : Camera, Anima
     fun zoomIn() {
         val newZoom = when (zoom.getValue()) {
             Zoom.Closest  -> Zoom.Closest
-            Zoom.Middle   -> Zoom.Closest
+            Zoom.Close    -> Zoom.Closest
+            Zoom.Middle   -> Zoom.Close
             Zoom.Farthest -> Zoom.Middle
         }
         moveTo(zoom = newZoom)
@@ -262,7 +264,8 @@ class OrbitalCamera(yaw: HexDirection, pitch: Pitch, zoom: Zoom) : Camera, Anima
 
     fun zoomOut() {
         val newZoom = when (zoom.getValue()) {
-            Zoom.Closest  -> Zoom.Middle
+            Zoom.Closest  -> Zoom.Close
+            Zoom.Close    -> Zoom.Middle
             Zoom.Middle   -> Zoom.Farthest
             Zoom.Farthest -> Zoom.Farthest
         }

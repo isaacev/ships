@@ -23,7 +23,7 @@ import frontend.game.hexagons.TileGrid
 import frontend.game.hexagons.pointToHex
 
 class Game : GameLike {
-    private var camera = OrbitalCamera(HexDirection.Top, Pitch.Middle, Zoom.Farthest)
+    private var camera = OrbitalCamera(HexDirection.Top, Pitch.Middle, Zoom.Close)
     private var tiles: TileGrid? = null
     private val shipFactory = ShipFactory()
     private var renderer = Renderer()
