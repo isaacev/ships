@@ -29,33 +29,6 @@ fun flatHexCorner(centerX: Float, centerY: Float, size: Float, corner: Int): Vec
     return Vector2f(x, y)
 }
 
-fun flatHexCorners(centerX: Float, centerY: Float, size: Float): Array<Vector2f> {
-    return arrayOf(
-        flatHexCorner(centerX, centerY, size, 0),
-        flatHexCorner(centerX, centerY, size, 1),
-        flatHexCorner(centerX, centerY, size, 2),
-        flatHexCorner(centerX, centerY, size, 3),
-        flatHexCorner(centerX, centerY, size, 4),
-        flatHexCorner(centerX, centerY, size, 5)
-    )
-}
-
-fun flatHexWidth(size: Float): Float {
-    return 2f * size
-}
-
-fun flatHexHeight(size: Float): Float {
-    return SQRT_3 * size
-}
-
-fun flatHexHorizontalCenterDist(size: Float): Float {
-    return flatHexWidth(size) * 0.75f
-}
-
-fun flatHexVerticalCenterDist(size: Float): Float {
-    return flatHexHeight(size)
-}
-
 /**
  * COORDINATE SYSTEMS
  *
