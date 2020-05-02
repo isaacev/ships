@@ -15,12 +15,14 @@ import backend.window.Window
 import frontend.Configs
 import frontend.game.agents.Ship
 import frontend.game.agents.ShipFactory
-import frontend.game.agents.ShipStyle
+import frontend.game.agents.Style
+import frontend.game.entities.ExplosionFactory
 import frontend.game.hexagons.HexCubeCoord
 import frontend.game.hexagons.HexDirection
 import frontend.game.hexagons.Pathfinder
 import frontend.game.hexagons.TileGrid
 import frontend.game.hexagons.pointToHex
+import org.joml.Vector3f
 
 class Game : GameLike {
     private var camera = OrbitalCamera(HexDirection.Top, Pitch.Middle, Zoom.Close)
@@ -28,6 +30,7 @@ class Game : GameLike {
     private val shipFactory = ShipFactory()
     private var renderer = Renderer()
     private val entities: MutableList<Entity> = ArrayList()
+    private val explosionFactory = ExplosionFactory()
 
     private var camPanUp = DiscreteKey(Configs.Controls.CAMERA_PAN_UP)
     private var camPanDown = DiscreteKey(Configs.Controls.CAMERA_PAN_DOWN)
@@ -45,13 +48,18 @@ class Game : GameLike {
     override fun load() {
         tiles = TileGrid(5)
 
-        val pirateStyle = ShipStyle(hull = color(0x502716), sails = color(0xF0E3C7))
+        val pirateStyle = Style(hull = color(0x502716), sails = color(0xF0E3C7))
         pirateShip = shipFactory.newShipAt(HexCubeCoord(0, 0, 0), HexDirection.Bottom, pirateStyle)
         entities.add(pirateShip!!)
 
-        val imperialStyle = ShipStyle(hull = color(0x273448), sails = color(0xE8D78E))
+        val imperialStyle = Style(hull = color(0x273448), sails = color(0xE8D78E))
         imperialShip = shipFactory.newShipAt(HexCubeCoord(-2, 2, 0), HexDirection.BottomLeft, imperialStyle)
         entities.add(imperialShip!!)
+
+        explosionFactory.spawnAt(.5f, Vector3f(-.4f, .5f, -.5f))
+        explosionFactory.spawnAt(.5f, Vector3f(-.4f, .5f, +.5f))
+        explosionFactory.spawnAt(.5f, Vector3f(+.4f, .5f, -.5f))
+        explosionFactory.spawnAt(.5f, Vector3f(+.4f, .5f, +.5f))
     }
 
     override fun input(window: Window, mouse: Mouse) {
@@ -97,11 +105,12 @@ class Game : GameLike {
     }
 
     override fun render(window: Window) {
-        renderer.render(window, camera, tiles, entities)
+        renderer.render(window, camera, tiles, entities, explosionFactory.explosions)
     }
 
     override fun free() {
         tiles?.free()
         shipFactory.free()
+        explosionFactory.free()
     }
 }

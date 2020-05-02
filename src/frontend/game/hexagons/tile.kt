@@ -84,7 +84,7 @@ class TileGrid(private val gridSize: Int) : Managed {
                     val tile = Tile(coord, model)
                     tiles[coord] = tile
                     val cartesianCoord = coord.toCartesian(TILE_SIZE)
-                    tile.updateEntity(x = cartesianCoord.x, y = cartesianCoord.y)
+                    tile.updateEntity(x = cartesianCoord.x, z = cartesianCoord.y)
                 }
             }
         }

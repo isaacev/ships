@@ -6,6 +6,7 @@ import backend.memory.Entity
 import backend.window.ScreenPixels
 import backend.window.Window
 import frontend.Configs
+import frontend.game.entities.Explosion
 import frontend.game.hexagons.TileGrid
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -28,7 +29,17 @@ class Renderer {
         // Defer to entity for custom uniforms
         entity.setShaderUniforms(shader)
         entity.meshes { pos, rot, scale, mesh ->
-            val modelViewMatrix = transform.getModelViewMatrix(rot, pos, scale, viewMatrix)
+            val modelMatrix = transform.buildModelMatrix(pos, rot, scale)
+            val modelViewMatrix = if (entity.isBillboard) {
+                val copyOfViewMatrix = Matrix4f(viewMatrix)
+                copyOfViewMatrix.transpose3x3(modelMatrix)
+                copyOfViewMatrix.scale(scale)
+                transform.getModelViewMatrix(modelMatrix, copyOfViewMatrix)
+                    .scale(scale)
+            } else {
+                transform.getModelViewMatrix(modelMatrix, viewMatrix)
+            }
+
             shader.setUniform("modelViewMatrix", modelViewMatrix)
 
             // Draw the mesh
@@ -42,7 +53,7 @@ class Renderer {
     }
 
     // TODO: remove TileGrid from method signature
-    fun render(window: Window, camera: Camera, tiles: TileGrid?, entities: List<Entity>) {
+    fun render(window: Window, camera: Camera, tiles: TileGrid?, entities: List<Entity>, explosions: List<Explosion>) {
         // Clear the framebuffer and other preparations for a fresh render
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
         glViewport(0, 0, window.getPixelWidth(), window.getPixelHeight())
@@ -54,6 +65,10 @@ class Renderer {
         val viewMatrix = camera.viewMatrix
         tiles?.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
         entities.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
+
+        glDepthMask(false)
+        explosions.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
+        glDepthMask(true)
     }
 
     fun getProjectionMatrix(): Matrix4f {
@@ -62,22 +77,25 @@ class Renderer {
 }
 
 private class Transform {
-    private val modelViewMatrix = Matrix4f()
     val projectionMatrix = Matrix4f()
 
-    fun getModelViewMatrix(rot: Vector3f, pos: Vector3f, scale: Float, viewMatrix: Matrix4f): Matrix4f {
+    fun buildModelMatrix(pos: Vector3f, rot: Vector3f, scale: Float): Matrix4f {
         val radX = Math.toRadians(-rot.x.toDouble())
         val radY = Math.toRadians(-rot.y.toDouble())
         val radZ = Math.toRadians(-rot.z.toDouble())
-        modelViewMatrix.identity()
+        val modelMatrix = Matrix4f()
+        modelMatrix.identity()
             .translate(pos)
             .rotateX(radX.toFloat())
             .rotateY(radY.toFloat())
             .rotateZ(radZ.toFloat())
             .scale(scale)
+        return modelMatrix
+    }
 
-        val copyOfViewMatrix = Matrix4f(viewMatrix)
-        return copyOfViewMatrix.mul(modelViewMatrix)
+    fun getModelViewMatrix(modelMatrix: Matrix4f, viewMatrix: Matrix4f): Matrix4f {
+        val modelViewMatrix = Matrix4f(viewMatrix)
+        return modelViewMatrix.mul(modelMatrix)
     }
 
     fun getProjectionMatrix(
