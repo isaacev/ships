@@ -3,10 +3,10 @@ package backend.graphics
 import backend.Degrees
 import backend.Units
 import backend.memory.Entity
+import backend.particles.ParticleEmitter
 import backend.window.ScreenPixels
 import backend.window.Window
 import frontend.Configs
-import frontend.game.entities.Explosion
 import frontend.game.hexagons.TileGrid
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -44,7 +44,7 @@ class Renderer {
 
             // Draw the mesh
             entity.texture.bind()
-            glBindVertexArray(mesh.vaoId)
+            glBindVertexArray(mesh.getVaoId())
             glDrawElements(GL_TRIANGLES, mesh.vertexCount, GL_UNSIGNED_INT, 0)
             entity.texture.unbind()
         }
@@ -53,7 +53,9 @@ class Renderer {
     }
 
     // TODO: remove TileGrid from method signature
-    fun render(window: Window, camera: Camera, tiles: TileGrid?, entities: List<Entity>, explosions: List<Explosion>) {
+    fun render(
+        window: Window, camera: Camera, tiles: TileGrid?, entities: List<Entity>, particles: List<ParticleEmitter>
+    ) {
         // Clear the framebuffer and other preparations for a fresh render
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
         glViewport(0, 0, window.getPixelWidth(), window.getPixelHeight())
@@ -66,9 +68,7 @@ class Renderer {
         tiles?.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
         entities.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
 
-        glDepthMask(false)
-        explosions.forEach { renderEntity(projectionMatrix2, viewMatrix, it) }
-        glDepthMask(true)
+        particles.forEach { it.render(transform, projectionMatrix2, viewMatrix) }
     }
 
     fun getProjectionMatrix(): Matrix4f {
@@ -76,8 +76,16 @@ class Renderer {
     }
 }
 
-private class Transform {
+class Transform {
     val projectionMatrix = Matrix4f()
+
+    fun buildModelMatrix(pos: Vector3f, scale: Float): Matrix4f {
+        val modelMatrix = Matrix4f()
+        modelMatrix.identity()
+            .translate(pos)
+            .scale(scale)
+        return modelMatrix
+    }
 
     fun buildModelMatrix(pos: Vector3f, rot: Vector3f, scale: Float): Matrix4f {
         val radX = Math.toRadians(-rot.x.toDouble())

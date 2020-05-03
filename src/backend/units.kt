@@ -8,6 +8,8 @@ interface ToUnits {
     fun toUnits(): Units
 }
 
+typealias UnitsPerSecond = Float
+
 typealias Degrees = Float
 
 interface ToDegrees {
