@@ -15,7 +15,8 @@ import frontend.Configs
 import frontend.game.agents.Ship
 import frontend.game.agents.ShipFactory
 import frontend.game.agents.Style
-import frontend.game.effects.CannonballFactory
+import frontend.game.effects.FireballFactory
+import frontend.game.effects.SplashFactory
 import frontend.game.hexagons.HexCubeCoord
 import frontend.game.hexagons.HexDirection
 import frontend.game.hexagons.TileGrid
@@ -29,7 +30,8 @@ class Game : GameLike {
     private val entities: MutableList<Ship> = ArrayList()
 
     private lateinit var tiles: TileGrid
-    private lateinit var cannonball: CannonballFactory
+    private lateinit var fireballFactory: FireballFactory
+    private lateinit var splashFactory: SplashFactory
 
     private var camPanUp = DiscreteKey(Configs.Controls.CAMERA_PAN_UP)
     private var camPanDown = DiscreteKey(Configs.Controls.CAMERA_PAN_DOWN)
@@ -55,7 +57,8 @@ class Game : GameLike {
         imperialShip = shipFactory.newShipAt(HexCubeCoord(-2, 2, 0), HexDirection.BottomLeft, imperialStyle)
         entities.add(imperialShip)
 
-        cannonball = CannonballFactory()
+        fireballFactory = FireballFactory()
+        splashFactory = SplashFactory()
     }
 
     override fun input(window: Window, mouse: Mouse) {
@@ -86,26 +89,31 @@ class Game : GameLike {
 
         if (selectTile.use() && hoverCoord != null) {
             val fireAtCartesian = hoverCoord!!.toCartesian()
-            val fireFrom = Vector3f(0f, .2f, 0f)
-            val fireAt = Vector3f(fireAtCartesian.x, fireFrom.y, fireAtCartesian.y)
-            cannonball.spawn(fireFrom, fireAt, 0f)
+            val x = fireAtCartesian.x
+            val z = fireAtCartesian.y
+            if (imperialShip.coord == hoverCoord) {
+                fireballFactory.spawn(Vector3f(x, .3f, z), 1f)
+                splashFactory.spawn(Vector3f(x, 0f, z), 6, plusOrMinus = 2, radius = .3f, spout = true)
+            } else {
+                splashFactory.spawn(Vector3f(x, 0f, z), 6, plusOrMinus = 2, radius = .2f, spout = true)
+            }
         }
-
-        cannonball.update()
     }
 
     override fun updateAnimation(delta: Duration) {
         camera.nextFrame(delta)
-        cannonball.nextFrame(delta.fresh())
+        fireballFactory.nextFrame(delta.fresh())
+        splashFactory.nextFrame(delta.fresh())
     }
 
     override fun render(window: Window) {
-        renderer.render(window, camera, tiles, entities, listOf(cannonball))
+        renderer.render(window, camera, tiles, entities, listOf(splashFactory, fireballFactory))
     }
 
     override fun free() {
         tiles.free()
         shipFactory.free()
-        cannonball.free()
+        fireballFactory.free()
+        splashFactory.free()
     }
 }

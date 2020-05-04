@@ -3,7 +3,7 @@ package backend.animation
 import kotlin.math.pow
 
 enum class Easing {
-    Linear, InQuad, OutQuad, InOutQuad, InOutQuart;
+    Linear, InQuad, OutQuad, InOutQuad, InQuart, OutQuart, InOutQuart;
 
     private fun scale(rawT: Float): Float {
         val t = rawT.coerceIn(0f, 1f)
@@ -18,10 +18,12 @@ enum class Easing {
                 -1 + (4 - 2 * t) * t
             }
 
+            InQuart    -> t * t * t * t
+            OutQuart   -> 1 - (t - 1).pow(4)
             InOutQuart -> if (t < .5f) {
                 8 * t * t * t * t
             } else {
-                1 - 8 * t * (t - 1).pow(3)
+                1 - 8 * (t - 1).pow(4)
             }
         }
     }
